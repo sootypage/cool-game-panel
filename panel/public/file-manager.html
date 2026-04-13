@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>File Manager - V9 Panel</title>
+  <style>
+    :root {
+      --bg: #060d1b;
+      --bg2: #0a1326;
+      --panel: #0f1a32;
+      --panel2: #13213f;
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #e5edff;
+      --muted: #9cb1d7;
+      --accent: #3b82f6;
+      --ok: #22c55e;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 38%), linear-gradient(180deg, var(--bg), var(--bg2));
+      min-height: 100vh;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      background: rgba(8, 15, 31, 0.96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+    .brand { font-weight: 700; font-size: 16px; }
+    .muted { color: var(--muted); }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 9px;
+      background: #1b2b50;
+      color: white;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn.primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .btn.ok { background: linear-gradient(135deg, #34d399, #16a34a); }
+    .btn.danger { background: linear-gradient(135deg, #f87171, #ef4444); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 12px;
+      height: calc(100vh - 66px);
+      padding: 12px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(19, 33, 63, 0.96), rgba(12, 21, 41, 0.96));
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+    }
+    .panelHeader {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 8px;
+    }
+    .pathBar {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #0c1730;
+      color: #dbeafe;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .miniRow { display: flex; gap: 8px; flex-wrap: wrap; }
+    .fileList {
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+      align-content: start;
+    }
+    .item {
+      border: 1px solid transparent;
+      border-radius: 9px;
+      padding: 9px 10px;
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      display: grid;
+      gap: 4px;
+    }
+    .item:hover { border-color: rgba(59,130,246,.35); background: rgba(59,130,246,.12); }
+    .item.active { border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
+    .itemName { font-size: 13px; font-weight: 700; word-break: break-word; }
+    .itemPath { color: var(--muted); font-size: 11px; word-break: break-all; }
+    .footer {
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(8, 15, 31, 0.45);
+    }
+    .editorPane {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0b152c;
+    }
+    .editorHeader {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .breadcrumbs {
+      font-family: monospace;
+      font-size: 12px;
+      color: #bfdbfe;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    #editor {
+      height: 100%;
+      width: 100%;
+    }
+    .console {
+      border-top: 1px solid var(--line);
+      background: #071022;
+      color: #86efac;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 10px;
+      max-height: 160px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+    .toastHost {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      display: grid;
+      gap: 8px;
+      z-index: 10000;
+      max-width: min(92vw, 360px);
+    }
+    .toast {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--line);
+      color: #dbeafe;
+      border-radius: 10px;
+      padding: 10px 12px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 150ms ease;
+      font-size: 13px;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.ok { border-color: rgba(34,197,94,.35); color: #bbf7d0; }
+    .toast.error { border-color: rgba(239,68,68,.35); color: #fecaca; }
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; height: auto; }
+      .panel { height: 46vh; }
+      .editorPane { height: 52vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="brand">V9 Monster File Manager</div>
+      <div class="muted" id="serverInfo">Loading...</div>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="location.href='dashboard.html'">Dashboard</button>
+      <button class="btn" onclick="location.href='server.html?id=' + encodeURIComponent(serverId)">Back</button>
+      <button class="btn danger" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="panelHeader">
+        <input id="pathBar" class="pathBar" value="/" readonly />
+        <div class="miniRow">
+          <button id="upBtn" class="btn">Up</button>
+          <button id="refreshBtn" class="btn">Refresh</button>
+          <button id="newFolderBtn" class="btn">New Folder</button>
+          <button id="uploadBtn" class="btn ok">Upload</button>
+          <input id="fileInput" type="file" hidden />
+        </div>
+      </div>
+      <div id="fileList" class="fileList"></div>
+      <div class="footer" id="leftFooter">0 item(s)</div>
+    </div>
+
+    <div class="editorPane">
+      <div class="editorHeader">
+        <div class="breadcrumbs" id="currentFileLabel">No file selected</div>
+        <div class="miniRow">
+          <button id="renameBtn" class="btn">Rename</button>
+          <button id="deleteBtn" class="btn danger">Delete</button>
+          <button id="downloadBtn" class="btn">Download</button>
+          <button id="saveBtn" class="btn primary">Save</button>
+        </div>
+      </div>
+      <div id="editor"></div>
+      <div class="console" id="actionLog">Ready.</div>
+    </div>
+  </div>
+
+  <div id="toastHost" class="toastHost"></div>
+
+  <script src="app.js"></script>
+  <script>
+    loadSavedLogin();
+    if (!loggedInUser) window.location = 'index.html';
+
+    const params = new URLSearchParams(window.location.search);
+    const serverId = params.get('id');
+
+    let serverOverview = null;
+    let currentPath = '';
+    let selectedEntry = null;
+    let editor = null;
+    let currentFilePath = '';
+    let currentEntries = [];
+
+    function showToast(text, kind) {
+      const host = document.getElementById('toastHost');
+      const toast = document.createElement('div');
+      toast.className = `toast ${kind || ''}`.trim();
+      toast.textContent = text;
+      host.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 180);
+      }, 2600);
+    }
+
+    function logLine(text) {
+      const box = document.getElementById('actionLog');
+      box.textContent = `${new Date().toLocaleTimeString()} ${text}\n` + box.textContent;
+    }
+
+    function b64FromArrayBuffer(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    function guessLang(filePath) {
+      const p = String(filePath || '').toLowerCase();
+      if (p.endsWith('.js')) return 'javascript';
+      if (p.endsWith('.ts')) return 'typescript';
+      if (p.endsWith('.json')) return 'json';
+      if (p.endsWith('.yml') || p.endsWith('.yaml')) return 'yaml';
+      if (p.endsWith('.md')) return 'markdown';
+      if (p.endsWith('.html')) return 'html';
+      if (p.endsWith('.css')) return 'css';
+      if (p.endsWith('.xml')) return 'xml';
+      if (p.endsWith('.properties')) return 'ini';
+      if (p.endsWith('.toml')) return 'ini';
+      if (p.endsWith('.env')) return 'shell';
+      return 'plaintext';
+    }
+
+    function joinPath(base, name) {
+      const b = String(base || '').replace(/^\/+|\/+$/g, '');
+      const n = String(name || '').replace(/^\/+|\/+$/g, '');
+      return [b, n].filter(Boolean).join('/');
+    }
+
+    async function loadOverview() {
+      const data = await fetchServerOverview(serverId);
+      if (data.error) {
+        showToast(data.error, 'error');
+        return;
+      }
+      serverOverview = data;
+      document.getElementById('serverInfo').textContent = `${data.server.name} • ${data.server.type} • ${data.server.status || 'unknown'} • ${data.node ? data.node.name : 'local'}`;
+    }
+
+    function renderList(files) {
+      currentEntries = files;
+      const list = document.getElementById('fileList');
+      list.innerHTML = '';
+
+      if (!files.length) {
+        const empty = document.createElement('div');
+        empty.className = 'item';
+        empty.textContent = 'No files in this folder.';
+        list.appendChild(empty);
+      }
+
+      files.forEach(file => {
+        const row = document.createElement('div');
+        row.className = 'item';
+        if (selectedEntry && selectedEntry.path === file.path) row.classList.add('active');
+        row.innerHTML = `<div class="itemName">${file.isDir ? '📂' : '📄'} ${file.name}</div><div class="itemPath">${file.path}</div>`;
+        row.addEventListener('click', () => selectEntry(file));
+        row.addEventListener('dblclick', () => {
+          if (file.isDir) openFolder(file.path);
+          else openFile(file.path);
+        });
+        list.appendChild(row);
+      });
+
+      document.getElementById('leftFooter').textContent = `${files.length} item(s)`;
+    }
+
+    async function loadFiles(pathValue = '') {
+      const data = await fetchServerFiles(serverId, pathValue);
+      if (data.error) {
+        showToast(data.error, 'error');
+        return;
+      }
+      currentPath = data.currentPath || '';
+      selectedEntry = null;
+      document.getElementById('pathBar').value = '/' + currentPath;
+      renderList(Array.isArray(data.files) ? data.files : []);
+    }
+
+    function selectEntry(file) {
+      selectedEntry = file;
+      renderList(currentEntries);
+      if (!file.isDir) {
+        openFile(file.path);
+      } else {
+        currentFilePath = '';
+        document.getElementById('currentFileLabel').textContent = '/' + file.path;
+      }
+    }
+
+    async function openFolder(pathValue) {
+      await loadFiles(pathValue || '');
+    }
+
+    async function openFile(filePath) {
+      const data = await fetchServerFile(serverId, filePath);
+      if (data.error) {
+        showToast(data.error, 'error');
+        return;
+      }
+      currentFilePath = data.path;
+      document.getElementById('currentFileLabel').textContent = '/' + data.path;
+      editor.setValue(data.content || '');
+      monaco.editor.setModelLanguage(editor.getModel(), guessLang(data.path));
+      logLine('Opened ' + data.path);
+    }
+
+    async function saveCurrentFile() {
+      if (!currentFilePath) {
+        showToast('No file selected.', 'error');
+        return;
+      }
+      const data = await saveServerFile(serverId, currentFilePath, editor.getValue());
+      if (data.error) {
+        showToast(data.error, 'error');
+        return;
+      }
+      showToast('Saved ' + currentFilePath, 'ok');
+      logLine('Saved ' + currentFilePath);
+    }
+
+    async function uploadPickedFile(file) {
+      if (!file) return;
+      const targetName = prompt('Upload as file name', file.name);
+      if (!targetName) return;
+      const targetPath = joinPath(currentPath, targetName);
+
+      const b64 = b64FromArrayBuffer(await file.arrayBuffer());
+      const data = await uploadServerFile(serverId, targetPath, b64, false);
+      if (data.error) {
+        showToast(data.error, 'error');
+        return;
+      }
+      showToast('Uploaded ' + targetName, 'ok');
+      logLine('Uploaded ' + targetPath);
+      await loadFiles(currentPath);
+    }
+
+    async function createFolder() {
+      const name = prompt('Folder name');
+      if (!name) return;
+      const targetPath = joinPath(currentPath, name);
+      const data = await mkdirServerPath(serverId, targetPath);
+      if (data.error) return showToast(data.error, 'error');
+      showToast('Folder created', 'ok');
+      logLine('Created folder ' + targetPath);
+      await loadFiles(currentPath);
+    }
+
+    async function renameSelected() {
+      if (!selectedEntry) return showToast('Select a file or folder first.', 'error');
+      const suggested = String(selectedEntry.name || '');
+      const nextName = prompt('Rename to', suggested);
+      if (!nextName || nextName === suggested) return;
+
+      const oldPath = selectedEntry.path;
+      const base = oldPath.split('/').slice(0, -1).join('/');
+      const newPath = joinPath(base, nextName);
+      const data = await renameServerPath(serverId, oldPath, newPath);
+      if (data.error) return showToast(data.error, 'error');
+      showToast('Renamed', 'ok');
+      logLine(`Renamed ${oldPath} -> ${newPath}`);
+      await loadFiles(currentPath);
+      selectedEntry = null;
+    }
+
+    async function deleteSelected() {
+      if (!selectedEntry) return showToast('Select a file or folder first.', 'error');
+      if (!confirm('Delete ' + selectedEntry.path + ' ?')) return;
+
+      const deletingPath = selectedEntry.path;
+
+      const data = await deleteServerPath(serverId, deletingPath);
+      if (data.error) return showToast(data.error, 'error');
+      showToast('Deleted', 'ok');
+      logLine('Deleted ' + deletingPath);
+      selectedEntry = null;
+      if (currentFilePath && currentFilePath === deletingPath) {
+        currentFilePath = '';
+        document.getElementById('currentFileLabel').textContent = 'No file selected';
+        editor.setValue('');
+      }
+      await loadFiles(currentPath);
+    }
+
+    function downloadSelected() {
+      if (!selectedEntry || selectedEntry.isDir) return showToast('Select a file to download.', 'error');
+      window.open(getServerDownloadUrl(serverId, selectedEntry.path), '_blank');
+      logLine('Download ' + selectedEntry.path);
+    }
+
+    function setupBindings() {
+      document.getElementById('upBtn').addEventListener('click', () => {
+        if (!currentPath) return;
+        const parts = currentPath.split('/').filter(Boolean);
+        parts.pop();
+        loadFiles(parts.join('/'));
+      });
+
+      document.getElementById('refreshBtn').addEventListener('click', () => loadFiles(currentPath));
+      document.getElementById('newFolderBtn').addEventListener('click', createFolder);
+      document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+      document.getElementById('fileInput').addEventListener('change', ev => {
+        const file = ev.target.files && ev.target.files[0];
+        uploadPickedFile(file).finally(() => {
+          ev.target.value = '';
+        });
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', saveCurrentFile);
+      document.getElementById('renameBtn').addEventListener('click', renameSelected);
+      document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
+      document.getElementById('downloadBtn').addEventListener('click', downloadSelected);
+    }
+
+    function bootMonaco() {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js';
+      s.onload = () => {
+        require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } });
+        require(['vs/editor/editor.main'], () => {
+          editor = monaco.editor.create(document.getElementById('editor'), {
+            value: '',
+            language: 'plaintext',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: true },
+            fontSize: 13,
+            wordWrap: 'off'
+          });
+
+          setupBindings();
+          loadOverview();
+          loadFiles('');
+          showToast('Monaco loaded', 'ok');
+        });
+      };
+      document.body.appendChild(s);
+    }
+
+    if (!serverId) {
+      alert('Missing server id in URL.');
+      location.href = 'dashboard.html';
+    } else {
+      bootMonaco();
+    }
+  </script>
+</body>
+</html>

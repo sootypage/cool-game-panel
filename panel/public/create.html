@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Server</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root{
+      --bg:#0b1220; --panel:#111a2e; --panel2:#0f172a; --line:#22304d;
+      --text:#fff; --muted:#b8c1d1; --blue:#2563eb; --green:#16a34a; --red:#dc2626;
+    }
+    body{
+      margin:0; font-family:Arial,sans-serif; color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(34,197,94,.09), transparent 25%),
+        var(--bg);
+    }
+    .topbar{
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      padding:16px 24px; border-bottom:1px solid #1f2a44; background:rgba(17,26,46,.95);
+      position:sticky; top:0; z-index:10; backdrop-filter:blur(12px);
+    }
+    .brand{font-size:24px; font-weight:700;}
+    .nav{display:flex; gap:10px; flex-wrap:wrap;}
+    .nav button{
+      border:none; border-radius:10px; padding:10px 14px; cursor:pointer; color:#fff; background:var(--blue);
+    }
+    .nav .secondary{background:#1e293b;}
+    .nav .red{background:var(--red);}
+    .hidden{display:none!important;}
+    .container{max-width:1180px; margin:0 auto; padding:24px;}
+    .hero{display:grid; grid-template-columns:1.1fr .9fr; gap:18px; margin-bottom:18px;}
+    .card{
+      background:rgba(17,26,46,.94);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:22px;
+      box-shadow:0 18px 48px rgba(0,0,0,.22);
+    }
+    h1,h2,h3{margin:0 0 12px 0;}
+    .muted{color:var(--muted);}
+    .pillrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+    .pill{
+      padding:8px 10px; border-radius:999px; font-size:13px;
+      background:rgba(255,255,255,.05); border:1px solid rgba(148,163,184,.16); color:#dbeafe;
+    }
+    .summary-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+    .summary-box{
+      background:rgba(15,23,42,.86); border:1px solid rgba(148,163,184,.12); border-radius:12px; padding:14px;
+    }
+    .summary-box label{
+      display:block; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:8px;
+    }
+    .summary-box strong{display:block; font-size:16px;}
+    label{display:block; margin-top:4px; margin-bottom:6px; font-weight:600;}
+    .input, select, textarea{
+      width:100%; padding:12px; border-radius:12px; border:1px solid #334155;
+      background:var(--panel2); color:#fff; margin-bottom:14px;
+    }
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+    .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;}
+    .btn{
+      border:none; border-radius:12px; padding:12px 16px; cursor:pointer; color:#fff;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    }
+    .btn.secondary{background:#1e293b;}
+    .btn.green{background:linear-gradient(135deg,#22c55e,#16a34a);}
+    .message{
+      margin-top:14px; padding:12px; border-radius:12px; background:#0f172a; border:1px solid #2c3b5b;
+      white-space:pre-wrap; word-break:break-word;
+    }
+    .ok-note,.warn-note{
+      padding:12px; border-radius:12px; margin-bottom:14px;
+    }
+    .ok-note{background:rgba(34,197,94,.08); border:1px solid rgba(34,197,94,.25); color:#bbf7d0;}
+    .warn-note{background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.25); color:#fde68a;}
+    @media (max-width: 900px){
+      .hero,.row,.row3,.summary-grid{grid-template-columns:1fr;}
+      .topbar{flex-direction:column; align-items:stretch;}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">V9 Panel</div>
+    <div class="nav">
+      <button class="secondary" onclick="location.href='index.html'">Main Page</button>
+      <button id="navDashboard" class="hidden" onclick="location.href='dashboard.html'">Dashboard</button>
+      <button id="navCreate" class="hidden" onclick="location.href='create.html'">Create Server</button>
+      <button id="navStatus" class="hidden" onclick="location.href='status.html'">Status</button>
+      <button id="navNodes" class="hidden" onclick="location.href='nodes.html'">Nodes</button>
+      <button id="navAdmin" class="hidden" onclick="location.href='admin.html'">Admin</button>
+      <button id="navLogout" class="hidden red" onclick="logoutUser()">Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="hero">
+      <div class="card">
+        <h1>Create a new server</h1>
+        <p class="muted">Choose a server type, review its fields, and the page will auto-pick a node when that type needs one.</p>
+        <div class="pillrow">
+          <div class="pill">Rebuilt page</div>
+          <div class="pill">Cleaner type handling</div>
+          <div class="pill">Startup support</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Summary</h3>
+        <div class="summary-grid">
+          <div class="summary-box"><label>Node rule</label><strong id="summaryNodeRule">Waiting</strong></div>
+          <div class="summary-box"><label>Support</label><strong id="summarySupportRule">Ready</strong></div>
+          <div class="summary-box"><label>Default memory</label><strong id="summaryMemoryRule">2G</strong></div>
+          <div class="summary-box"><label>Preset</label><strong id="summaryPresetRule">Default</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+        <h2>Create Server</h2>
+        <button class="btn secondary" type="button" onclick="refreshCreateNodes()">Refresh Nodes</button>
+      </div>
+
+      <label>Server Name</label>
+      <input id="serverName" class="input" placeholder="My Server" />
+
+      <div class="row">
+        <div>
+          <label>Server Type</label>
+          <select id="serverType" class="input" onchange="updateServerFields()">
+            <optgroup label="Minecraft">
+              <option value="paper">Paper</option>
+              <option value="forge">Forge</option>
+              <option value="fabric">Fabric</option>
+              <option value="vanilla">Vanilla</option>
+              <option value="nodejs">Node.js</option>
+              <option value="python">Python</option>
+            </optgroup>
+            <optgroup label="Survival / Sandbox">
+              <option value="rust">Rust</option>
+              <option value="blockheads">Blockheads</option>
+              <option value="satisfactory">Satisfactory</option>
+              <option value="projectzomboid">Project Zomboid</option>
+              <option value="7daystodie">7 Days to Die</option>
+              <option value="dayz">DayZ</option>
+              <option value="sonsoftheforest">Sons of the Forest</option>
+              <option value="unturned">Unturned</option>
+              <option value="ark">ARK</option>
+              <option value="astroneer">Astroneer</option>
+              <option value="mindustry">Mindustry</option>
+              <option value="farmingsim22">Farming Simulator 22</option>
+              <option value="farmingsim25">Farming Simulator 25</option>
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label>Memory</label>
+          <input id="serverMemory" class="input" value="2G" />
+        </div>
+      </div>
+
+      <div id="typeBanner" class="ok-note">Ready.</div>
+
+      <div class="row">
+        <div>
+          <label>Node</label>
+          <select id="serverNode" class="input"></select>
+        </div>
+        <div>
+          <label>Startup Preset</label>
+          <select id="startPreset" class="input"></select>
+        </div>
+      </div>
+
+      <div id="dynamicFields"></div>
+
+      <button class="btn green" onclick="createServer()">Create Server</button>
+      <div id="createMessage" class="message hidden"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let currentUser = null;
+    let createNodes = [];
+
+    function getEl(id){ return document.getElementById(id); }
+    function showMessage(text, isError=false){
+      const box = getEl('createMessage');
+      box.classList.remove('hidden');
+      box.textContent = text;
+      box.style.borderColor = isError ? '#7f1d1d' : '#2c3b5b';
+      box.style.background = isError ? '#2b1111' : '#0f172a';
+    }
+
+    function findSavedUser() {
+      if (window.loggedInUser && typeof window.loggedInUser === 'object') return window.loggedInUser;
+      for (const key of ['panelUser','loggedInUser','user','v9User']) {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') return parsed;
+        } catch {}
+      }
+      return null;
+    }
+
+    function loadUser() {
+      if (typeof window.loadSavedLogin === 'function') {
+        try { window.loadSavedLogin(); } catch {}
+      }
+      currentUser = findSavedUser();
+      return currentUser;
+    }
+
+    function panelUserHeaderValue() {
+      const user = currentUser || findSavedUser();
+      return user?.username || user?.email || '';
+    }
+
+    function logoutUser() {
+      if (typeof window.logout === 'function') return window.logout();
+      ['panelUser','loggedInUser','user','v9User'].forEach(key => localStorage.removeItem(key));
+      location.href = 'index.html';
+    }
+
+    function updateNav() {
+      const user = currentUser || findSavedUser();
+      const loggedIn = !!user;
+      const isAdmin = user?.role === 'admin';
+      getEl('navDashboard').classList.toggle('hidden', !loggedIn);
+      getEl('navCreate').classList.toggle('hidden', !loggedIn);
+      getEl('navStatus').classList.toggle('hidden', !loggedIn);
+      getEl('navLogout').classList.toggle('hidden', !loggedIn);
+      getEl('navNodes').classList.toggle('hidden', !isAdmin);
+      getEl('navAdmin').classList.toggle('hidden', !isAdmin);
+    }
+
+    function getTypeConfig(type) {
+      const map = {
+        paper:{supported:true,needsNode:false,versionLabel:'Paper Version',defaultMemory:'2G',preset:'Paper Default'},
+        forge:{supported:true,needsNode:false,versionLabel:'Forge Version',defaultMemory:'3G',preset:'Forge Modded'},
+        fabric:{supported:true,needsNode:false,versionLabel:'Fabric Version',defaultMemory:'2G',preset:'Fabric Lightweight'},
+        vanilla:{supported:true,needsNode:false,versionLabel:'Vanilla Version',defaultMemory:'2G',preset:'Vanilla Default'},
+        rust:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'6G',preset:'Rust Survival'},
+        blockheads:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'2G',preset:'Blockheads World'},
+        satisfactory:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'8G',preset:'Factory Default'},
+        nodejs:{supported:true,needsNode:true,versionLabel:'Node.js Version',defaultMemory:'1G',preset:'Node App'},
+        python:{supported:true,needsNode:true,versionLabel:'Python Version',defaultMemory:'1G',preset:'Python App'},
+        projectzomboid:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'4G',preset:'Zomboid Survival'},
+        '7daystodie':{supported:true,needsNode:true,versionLabel:'',defaultMemory:'8G',preset:'7DTD Default'},
+        dayz:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'8G',preset:'DayZ Default'},
+        sonsoftheforest:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'8G',preset:'Sons Dedicated'},
+        unturned:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'4G',preset:'Unturned Default'},
+        ark:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'10G',preset:'ARK Survival'},
+        astroneer:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'4G',preset:'Astroneer Default'},
+        mindustry:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'2G',preset:'Mindustry Default'},
+        farmingsim22:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'6G',preset:'FS22 Dedicated'},
+        farmingsim25:{supported:true,needsNode:true,versionLabel:'',defaultMemory:'8G',preset:'FS25 Dedicated'}
+      };
+      return map[type] || map.paper;
+    }
+
+    function getStartPresets(type) {
+      const presets = {
+        paper:['Paper Default','Small Survival','Lobby'],
+        forge:['Forge Modded','Heavy Modpack','Tech Pack'],
+        fabric:['Fabric Lightweight','Fabric SMP'],
+        vanilla:['Vanilla Default','Vanilla Hardcore'],
+        rust:['Rust Survival','Rust Modded'],
+        blockheads:['Blockheads World'],
+        satisfactory:['Factory Default','Large Factory'],
+        nodejs:['Node App','Express API','Discord Bot'],
+        python:['Python App','Flask App','Discord Bot'],
+        projectzomboid:['Zomboid Survival','Roleplay'],
+        '7daystodie':['7DTD Default','PvE Focus'],
+        dayz:['DayZ Default','Hardcore'],
+        sonsoftheforest:['Sons Dedicated'],
+        unturned:['Unturned Default','Survival'],
+        ark:['ARK Survival','Boosted Rates'],
+        astroneer:['Astroneer Default'],
+        mindustry:['Mindustry Default','PvP'],
+        farmingsim22:['FS22 Dedicated'],
+        farmingsim25:['FS25 Dedicated']
+      };
+      return presets[type] || ['Default'];
+    }
+
+    function setSummary(type, cfg) {
+      getEl('summaryNodeRule').textContent = cfg.needsNode ? 'Auto-pick node' : 'Local or node';
+      getEl('summarySupportRule').textContent = cfg.supported ? 'Ready now' : 'Not ready';
+      getEl('summaryMemoryRule').textContent = cfg.defaultMemory || '2G';
+      getEl('summaryPresetRule').textContent = cfg.preset || 'Default';
+    }
+
+    function setBanner(cfg) {
+      const banner = getEl('typeBanner');
+      if (cfg.needsNode) {
+        banner.className = 'ok-note';
+        banner.textContent = 'This type runs on a node. The page will auto-pick one if available.';
+      } else {
+        banner.className = 'ok-note';
+        banner.textContent = 'This type can run locally or on a node.';
+      }
+    }
+
+    function renderPresets(type) {
+      getEl('startPreset').innerHTML = getStartPresets(type).map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+
+    function renderFields(type, cfg) {
+      const box = getEl('dynamicFields');
+      const versionField = cfg.versionLabel ? `
+        <div>
+          <label>${cfg.versionLabel}</label>
+          <input id="serverVersion" class="input" placeholder="latest supported version" />
+        </div>
+      ` : '';
+
+      if (type === 'blockheads') {
+        box.innerHTML = `
+          <div class="card" style="margin-top:18px;padding:18px;">
+            <h3 style="margin-bottom:12px;">Type Options</h3>
+            <div class="row3">
+              <div>
+                <label>World ID</label>
+                <input id="worldId" class="input" placeholder="myworld001" />
+              </div>
+              <div>
+                <label>World Size</label>
+                <select id="worldWidth" class="input">
+                  <option value="1/16">Tiny</option>
+                  <option value="1/4">Small</option>
+                  <option value="1" selected>Normal</option>
+                  <option value="4">Large</option>
+                  <option value="16">Huge</option>
+                </select>
+              </div>
+              <div>
+                <label>Expert Mode</label>
+                <select id="expertMode" class="input">
+                  <option value="false" selected>Off</option>
+                  <option value="true">On</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (type === 'nodejs') {
+        box.innerHTML = `
+          <div class="card" style="margin-top:18px;padding:18px;">
+            <h3 style="margin-bottom:12px;">Type Options</h3>
+            <div class="row3">
+              <div>
+                <label>Node.js Version</label>
+                <input id="serverVersion" class="input" placeholder="20" />
+              </div>
+              <div>
+                <label>Start File</label>
+                <input id="optStartFile" class="input" placeholder="server.js" />
+              </div>
+              <div>
+                <label>Start Command</label>
+                <input id="optStartCommand" class="input" placeholder="node server.js" />
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (type === 'python') {
+        box.innerHTML = `
+          <div class="card" style="margin-top:18px;padding:18px;">
+            <h3 style="margin-bottom:12px;">Type Options</h3>
+            <div class="row3">
+              <div>
+                <label>Python Version</label>
+                <input id="serverVersion" class="input" placeholder="3.11" />
+              </div>
+              <div>
+                <label>Start File</label>
+                <input id="optStartFile" class="input" placeholder="main.py" />
+              </div>
+              <div>
+                <label>Start Command</label>
+                <input id="optStartCommand" class="input" placeholder="python main.py" />
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const noVersionTypes = ['rust','satisfactory','mindustry','projectzomboid','7daystodie','ark','astroneer','farmingsim22','farmingsim25','dayz','sonsoftheforest','unturned'];
+      if (noVersionTypes.includes(type)) {
+        box.innerHTML = `
+          <div class="card" style="margin-top:18px;padding:18px;">
+            <h3 style="margin-bottom:12px;">Type Options</h3>
+            <div class="row3">
+              <div>
+                <label>Start Command</label>
+                <input id="optStartCommand" class="input" placeholder="optional custom command" />
+              </div>
+              <div>
+                <label>Query Port</label>
+                <input id="optQueryPort" class="input" placeholder="optional" />
+              </div>
+              <div>
+                <label>Max Players</label>
+                <input id="optMaxPlayers" class="input" value="20" />
+              </div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="card" style="margin-top:18px;padding:18px;">
+          <h3 style="margin-bottom:12px;">Type Options</h3>
+          ${versionField}
+        </div>
+      `;
+    }
+
+    function autoPickNode(type) {
+      const cfg = getTypeConfig(type);
+      const select = getEl('serverNode');
+      if (!cfg.needsNode) return;
+      const valid = [...select.options].filter(o => o.value);
+      if (!select.value && valid.length) select.value = valid[0].value;
+    }
+
+    function updateServerFields() {
+      const type = getEl('serverType').value;
+      const cfg = getTypeConfig(type);
+      getEl('serverMemory').value = cfg.defaultMemory || '2G';
+      renderPresets(type);
+      renderFields(type, cfg);
+      setSummary(type, cfg);
+      setBanner(cfg);
+      autoPickNode(type);
+    }
+
+    async function loadNodesForCreate() {
+      const select = getEl('serverNode');
+      select.innerHTML = '<option value="">Loading nodes...</option>';
+      try {
+        const res = await fetch('/api/nodes', {
+          headers: { 'x-panel-user': panelUserHeaderValue() }
+        });
+        const raw = await res.text();
+        let data = [];
+        try { data = JSON.parse(raw); } catch { throw new Error('Node list returned non-JSON response.'); }
+        if (!res.ok) throw new Error(data.error || 'Failed to load nodes.');
+        createNodes = Array.isArray(data) ? data : [];
+        select.innerHTML = '<option value="">No node selected</option>';
+        if (!createNodes.length) {
+          select.innerHTML = '<option value="">No nodes found</option>';
+          updateServerFields();
+          return;
+        }
+        for (const node of createNodes) {
+          const opt = document.createElement('option');
+          opt.value = node.id;
+          opt.textContent = `${node.name} (${node.ip}:${node.port || '4110'})`;
+          select.appendChild(opt);
+        }
+        updateServerFields();
+      } catch (err) {
+        createNodes = [];
+        select.innerHTML = '<option value="">No node access</option>';
+        showMessage(err.message || 'Could not load nodes.', true);
+      }
+    }
+
+    function refreshCreateNodes() { loadNodesForCreate(); }
+
+    function collectOptions(type) {
+      const val = id => document.getElementById(id)?.value || '';
+      const out = {
+        startPreset: val('startPreset'),
+        optStartFile: val('optStartFile'),
+        optStartCommand: val('optStartCommand'),
+        optQueryPort: val('optQueryPort'),
+        optMaxPlayers: val('optMaxPlayers')
+      };
+      if (type === 'blockheads') {
+        out.worldId = val('worldId').trim();
+        out.worldWidth = val('worldWidth') || '1';
+        out.expertMode = val('expertMode') === 'true';
+      }
+      return out;
+    }
+
+    async function createServer() {
+      try {
+        const type = getEl('serverType').value;
+        const cfg = getTypeConfig(type);
+        const name = getEl('serverName').value.trim();
+        const memory = getEl('serverMemory').value.trim() || cfg.defaultMemory || '2G';
+        let nodeId = getEl('serverNode').value;
+        const opts = collectOptions(type);
+
+        if (!name) return showMessage('Please enter a server name.', true);
+        if (!panelUserHeaderValue()) return showMessage('You are not logged in. Log in again and try once more.', true);
+
+        if (cfg.needsNode && !nodeId) {
+          const valid = [...getEl('serverNode').options].filter(o => o.value);
+          if (valid.length) nodeId = valid[0].value;
+        }
+        if (cfg.needsNode && !nodeId) return showMessage(`${type} needs a node, but no node is available.`, true);
+
+        const payload = { name, type, memory, nodeId, startup: {} };
+
+        if (type === 'blockheads') {
+          if (!opts.worldId) return showMessage('Please enter a world ID.', true);
+          payload.worldId = opts.worldId;
+          payload.worldWidth = opts.worldWidth;
+          payload.expertMode = opts.expertMode;
+        } else {
+          const noVersionTypes = ['rust','satisfactory','mindustry','projectzomboid','7daystodie','ark','astroneer','farmingsim22','farmingsim25','dayz','sonsoftheforest','unturned'];
+          if (!noVersionTypes.includes(type)) {
+            const version = getEl('serverVersion')?.value?.trim();
+            if (!version) return showMessage('Please enter a version.', true);
+            payload.version = version;
+          }
+        }
+
+        if (type === 'nodejs' || type === 'python') {
+          payload.version = getEl('serverVersion')?.value?.trim() || (type === 'nodejs' ? '20' : '3.11');
+          payload.startup = {
+            startFile: opts.optStartFile || (type === 'nodejs' ? 'server.js' : 'main.py'),
+            startCommand: opts.optStartCommand || (type === 'nodejs' ? 'node server.js' : 'python main.py')
+          };
+        }
+
+        showMessage('Creating server...');
+
+        const res = await fetch('/api/server/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-panel-user': panelUserHeaderValue()
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const raw = await res.text();
+        let data;
+        try { data = JSON.parse(raw); } catch { throw new Error('Server returned non-JSON response:\\n' + raw.slice(0, 300)); }
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to create server.');
+
+        showMessage(`Server created: ${data.server?.name || name}`);
+        setTimeout(() => { location.href = 'dashboard.html'; }, 700);
+      } catch (err) {
+        showMessage(err.message || 'Failed to create server.', true);
+      }
+    }
+
+    (function init(){
+      loadUser();
+      updateNav();
+      if (!currentUser) {
+        location.href = 'index.html';
+        return;
+      }
+      updateServerFields();
+      loadNodesForCreate();
+    })();
+
+    window.refreshCreateNodes = refreshCreateNodes;
+  </script>
+</body>
+</html>

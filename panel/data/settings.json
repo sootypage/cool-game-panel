@@ -1,0 +1,12 @@
+{
+  "panelApiKey": "",
+  "websiteUrl": "",
+  "smtp": {
+    "host": "",
+    "port": 587,
+    "secure": false,
+    "user": "",
+    "pass": "",
+    "from": ""
+  }
+}
