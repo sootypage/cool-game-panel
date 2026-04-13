@@ -1134,6 +1134,35 @@ app.post('/api/files/upload', requireUser, upload.single('file'), (req, res) => 
   }
 });
 
+app.get('/api/nodes/public', (req, res) => {
+  const nodes = getNodes().map(node => ({
+    id: node.id,
+    name: node.name,
+    ip: node.ip,
+    port: node.port,
+    description: node.description || '',
+    status: node.status || 'unknown'
+  }));
+  res.json(nodes);
+});
+
+app.get('/api/nodes/public/check/:id', async (req, res) => {
+  try {
+    const node = getNodeById(req.params.id);
+    if (!node) return res.status(404).json({ error: 'Node not found.' });
+
+    const baseUrl = buildNodeBaseUrl(node);
+    const nodeRes = await axios.get(`${baseUrl}/info`, {
+      headers: { 'x-node-api-key': node.apiKey || '' },
+      timeout: 15000
+    });
+
+    res.json({ ok: true, info: nodeRes.data });
+  } catch {
+    res.status(500).json({ ok: false, error: 'Node check failed.' });
+  }
+});
+
 app.get('/api/nodes', requireAdmin, (req, res) => {
   res.json(getNodes());
 });
