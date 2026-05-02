@@ -1,7 +1,0 @@
-servers/
-panel/servers/
-node/servers/
-node_modules/
-**/node_modules/
-package-lock.json
-**/package-lock.json
