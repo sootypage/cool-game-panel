@@ -1,8 +1,0 @@
-{
-  "nodeName": "Node 1",
-  "nodeIp": "173.208.144.124",
-  "nodePort": 4110,
-  "panelUrl": "http://173.208.144.124:3001",
-  "apiKey": "948493889483774387984",
-  "dockerServersPath": "./servers"
-}
